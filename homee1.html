@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Display a map on a webpage</title>
+<meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+<link href="https://api.mapbox.com/mapbox-gl-js/v2.10.0/mapbox-gl.css" rel="stylesheet">
+<script src="https://api.mapbox.com/mapbox-gl-js/v2.10.0/mapbox-gl.js"></script>
+<style>
+body { margin: 0; padding: 0; }
+#map { position: absolute; top: 0; bottom: 0; width: 100%; }
+</style>
+</head>
+<body>
+
+<script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.0/mapbox-gl-geocoder.min.js"></script>
+<link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.0/mapbox-gl-geocoder.css" type="text/css">
+
+
+
+<div id="map"></div>
+<script  type="text/javascript">
+	mapboxgl.accessToken = 'pk.eyJ1Ijoia2F3dWxqYW4iLCJhIjoiY2w2MXQ1YWc0MjE1YzNqbWF2YW5ibGh1dCJ9.2zjI1Rugmgz-rJuxKfgGQQ';
+    const map = new mapboxgl.Map({
+        container: 'map',
+        // Choose from Mapbox's core styles, or make your own style with Mapbox Studio
+        //style: 'mapbox://styles/mapbox/light-v10',
+        style:'mapbox://styles/kawuljan/cl8jz58gm000214pa3i5o8kj8',
+        zoom: 12,
+        center: [139.622088, 37.878781]
+    });
+
+    map.on('load', () => {
+        // Add a new vector tile source with ID 'mapillary'.
+        map.addSource('mapillary', {
+            'type': 'vector',
+            'tiles': [
+                'https://tiles.mapillary.com/maps/vtp/mly1_public/2/{z}/{x}/{y}?access_token=MLY|4142433049200173|72206abe5035850d6743b23a49c41333'
+            ],
+            'minzoom': 6,
+            'maxzoom': 14
+        });
+        map.addLayer(
+            {
+                'id': 'mapillary', // Layer ID
+                'type': 'line',
+                'source': 'mapillary', // ID of the tile source created above
+                // Source has several layers. We visualize the one with name 'sequence'.
+                'source-layer': 'sequence',
+                'layout': {
+                    'line-cap': 'round',
+                    'line-join': 'round'
+                },
+                'paint': {
+                    'line-opacity': 0.6,
+                    'line-color': 'rgb(53, 175, 109)',
+                    'line-width': 2
+                }
+            },
+            'road-label' // Arrange our new layer beneath this layer
+        );
+    });
+
+
+
+const size = 200;
+ 
+// This implements `StyleImageInterface`
+// to draw a pulsing dot icon on the map.
+const pulsingDot = {
+width: size,
+height: size,
+data: new Uint8Array(size * size * 4),
+ 
+// When the layer is added to the map,
+// get the rendering context for the map canvas.
+onAdd: function () {
+const canvas = document.createElement('canvas');
+canvas.width = this.width;
+canvas.height = this.height;
+this.context = canvas.getContext('2d');
+},
+ 
+// Call once before every frame where the icon will be used.
+render: function () {
+const duration = 1000;
+const t = (performance.now() % duration) / duration;
+ 
+const radius = (size / 2) * 0.3;
+const outerRadius = (size / 2) * 0.7 * t + radius;
+const context = this.context;
+ 
+// Draw the outer circle.
+context.clearRect(0, 0, this.width, this.height);
+context.beginPath();
+context.arc(
+this.width / 2,
+this.height / 2,
+outerRadius,
+0,
+Math.PI * 2
+);
+context.fillStyle = `rgba(0,32,194, ${1 - t})`;
+context.fill();
+ 
+// Draw the inner circle.
+context.beginPath();
+context.arc(
+this.width / 2,
+this.height / 2,
+radius,
+0,
+Math.PI * 2
+);
+context.fillStyle = 'rgba(0,32,194, 1)';
+context.strokeStyle = 'blue';
+context.lineWidth = 2 + 4 * (1 - t);
+context.fill();
+context.stroke();
+ 
+// Update this image's data with data from the canvas.
+this.data = context.getImageData(
+0,
+0,
+this.width,
+this.height
+).data;
+ 
+// Continuously repaint the map, resulting
+// in the smooth animation of the dot.
+map.triggerRepaint();
+ 
+// Return `true` to let the map know that the image was updated.
+return true;
+}
+};
+ 
+map.on('load', () => {
+map.addImage('pulsing-dot', pulsingDot, { pixelRatio: 2 });
+ 
+map.addSource('dot-point', {
+'type': 'geojson',
+'data': {
+'type': 'FeatureCollection',
+'features': [
+{
+'type': 'Feature',
+'geometry': {
+'type': 'Point',
+'coordinates': [139.622088, 37.878781] // icon position [lng, lat]
+}
+}
+]
+}
+});
+map.addLayer({
+'id': 'layer-with-pulsing-dot',
+'type': 'symbol',
+'source': 'dot-point',
+'layout': {
+'icon-image': 'pulsing-dot'
+}
+});
+});
+
+
+map.addControl(
+new MapboxGeocoder({
+accessToken: mapboxgl.accessToken,
+mapboxgl: mapboxgl
+})
+);
+
+map.addControl(new mapboxgl.NavigationControl());
+map.addControl(new mapboxgl.FullscreenControl());
+
+// Add geolocate control to the map.
+map.addControl(
+new mapboxgl.GeolocateControl({
+positionOptions: {
+enableHighAccuracy: true
+},
+// When active the map will receive updates to the device's location as it changes.
+trackUserLocation: true,
+// Draw an arrow next to the location dot to indicate which direction the device is heading.
+showUserHeading: true
+})
+);
+
+
+
+
+
+    var now = new Date();
+    function LoadProc() {
+      var target = document.getElementById("DateTimeDisp");
+
+      var Year = now.getFullYear();
+      var Month = now.getMonth()+1;
+      var Date = now.getDate();
+      
+      var Hour = now.getHours();
+      var Min = now.getMinutes();
+      var Sec = now.getSeconds();
+
+      target.innerHTML = Year + "年" + Month + "月" + Date + "日" + Hour + ":" + Min + ":" + Sec;
+    }
+
+  </script>
+
+</script>
+
+</body>
+</html>
